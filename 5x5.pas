@@ -1,5 +1,6 @@
 {$mode objfpc}{$M+}
-uses Crt;
+uses Crt,
+  Classes;
 
 type
   Cell = record
@@ -19,6 +20,7 @@ var
   Input: Char;
   CursorPosition: Integer;
   MainField: Field;
+  ASCII: TStringList;
 
 function SubArray(Ary: Field; Start, Count: Integer): Row;
 var
@@ -66,7 +68,7 @@ begin
       if (CurrentCell.Check = Checked) then
         Write('# # #')
       else
-        Write('* * *');
+        Write('. . .');
       TextColor(White);
       Write(' | ')
     end;
@@ -183,6 +185,25 @@ begin
   CheckHorizontalNbrs();
 end;
 
+procedure Win();
+var
+  i: Integer;
+begin
+  for i := 0 to 24 do
+    MainField[i].Check := Checked;
+end;
+
+procedure CreateGame();
+begin
+  ASCII := TStringList.Create;
+  ASCII.LoadFromFile('5x5.txt');
+  CursorPosition := 0;
+  ClrScr;
+  WriteLn(ASCII.Text);
+  CreateField(MainField);
+  DisplayField(MainField);
+end;
+
 procedure InputHandler(Input: Char);
 begin
   case Input of
@@ -191,6 +212,8 @@ begin
     's': MoveDown();
     'w': MoveUp();
     'f': CheckCell();
+    'n': Win();
+    'r': CreateGame();
   end;
 end;
 
@@ -209,21 +232,25 @@ begin
     Result := false;
 end;
 
-
 begin
-  CursorPosition := 0;
-  CreateField(MainField);
-  DisplayField(MainField);
+  CreateGame();
   while true do
   begin
     Input := ReadKey;
     InputHandler(Input);
-    ClrScr;
-    DisplayField(MainField);
     if (IsVictory()) then
     begin
       ClrScr;
-      WriteLn('You won!');
+      ASCII.LoadFromFile('win.txt');
+      WriteLn(ASCII.Text);
+      WriteLn('esc to exit');
+      WriteLn('r to restart');
+    end
+    else
+    begin
+      ClrScr;
+      WriteLn(ASCII.Text);
+      DisplayField(MainField);
     end;
     if Input = #27 then
       Break;
