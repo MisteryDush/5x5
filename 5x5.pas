@@ -7,14 +7,20 @@ type
     CellIndex: Integer;
   end;
 
+  CellPointer = ^Cell;
 
   Field = array[0..24] of Cell;
 
   Row = array[0..4] of Cell;
 
+  CellPtrPtr = ^ CellPointer;
+
+  RowOfPntrs = array[0..4] of CellPointer;
+
 var
   Input: Char;
   CursorPosition: Integer;
+  MainField: Field;
 
 function SubArray(Ary: Field; Start, Count: Integer): Row;
 var
@@ -22,6 +28,16 @@ var
 begin
   for i := Start to Start + Count do
     Result[i - Start] := Ary[i];
+end;
+
+function SubArrayOfPntrs(Start, Count: Integer): RowOfPntrs;
+var
+  i: Integer;
+begin
+  for i := Start to Start + Count do
+  begin
+    Result[i - Start] := @MainField[i];
+  end;
 end;
 
 
@@ -56,6 +72,7 @@ begin
       TextColor(White);
       Write(' | ')
     end;
+
     WriteLn();
   end;
   WriteLn('---------------------------------------');
@@ -81,7 +98,6 @@ begin
   CursorPosition := CursorPosition - 1;
   if (CursorPosition < 0) then
     CursorPosition := 0;
-  WriteLn(CursorPosition);
 end;
 
 procedure MoveRight();
@@ -96,7 +112,6 @@ begin
   CursorPosition := CursorPosition + 5;
   if (CursorPosition > 24) then
     CursorPosition := CursorPosition - 5;
-  WriteLn(CursorPosition);
 end;
 
 procedure MoveUp();
@@ -104,7 +119,72 @@ begin
   CursorPosition := CursorPosition - 5;
   if (CursorPosition < 0) then
     CursorPosition := CursorPosition + 5;
-  WriteLn(CursorPosition);
+end;
+
+procedure CheckVerticalNbrs();
+var
+  UpperCell: CellPointer;
+  LowerCell: CellPointer;
+begin
+  try
+    UpperCell := @MainField[CursorPosition - 5];
+    if (UpperCell^.Check = Checked) then
+      UpperCell^.Check := Unchecked
+    else
+      UpperCell^.Check := Checked;
+  except
+  end;
+  try
+    LowerCell := @MainField[CursorPosition + 5];
+    if (LowerCell^.Check = Checked) then
+      LowerCell^.Check := Unchecked
+    else
+      LowerCell^.Check := Checked;
+  except
+  end;
+
+end;
+
+procedure CheckHorizontalNbrs();
+var
+  CurrentRow: RowOfPntrs;
+  CurrentRowIndex, LeftIndex, RightIndex: Integer;
+  LeftCell, RightCell: CellPointer;
+begin
+  CurrentRowIndex := CursorPosition div 5 * 5;
+  LeftIndex := CursorPosition mod 5 - 1;
+  RightIndex := CursorPosition mod 5 + 1;
+  CurrentRow := SubArrayOfPntrs(CurrentRowIndex, 4);
+  if (LeftIndex >= 0) then
+  begin
+    LeftCell := CurrentRow[LeftIndex];
+    case LeftCell^.Check of
+      Checked: LeftCell^.Check := Unchecked;
+      Unchecked: LeftCell^.Check := Checked;
+    end;
+  end;
+  if (RightIndex <= 4) then
+  begin
+    RightCell := CurrentRow[RightIndex];
+    case RightCell^.Check of
+      Checked: RightCell^.Check := Unchecked;
+      Unchecked: RightCell^.Check := Checked;
+    end;
+  end;
+
+end;
+
+procedure CheckCell();
+var
+  CurrentCell: CellPointer;
+begin
+  CurrentCell := @MainField[CursorPosition];
+  if (CurrentCell^.Check = Checked) then
+    CurrentCell^.Check := Unchecked
+  else
+    CurrentCell^.Check := Checked;
+  CheckVerticalNbrs();
+  CheckHorizontalNbrs();
 end;
 
 procedure InputHandler(Input: Char);
@@ -114,7 +194,7 @@ begin
     'd': MoveRight();
     's': MoveDown();
     'w': MoveUp();
-    ' ': SelectCell();
+    'f': CheckCell();
   end;
 end;
 
@@ -124,8 +204,7 @@ begin
   Write(Chr(27), '[', 5 * 3, 'D');
 end;
 
-var
-  MainField: Field;
+
 begin
   CursorPosition := 0;
   CreateField(MainField);
