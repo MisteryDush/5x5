@@ -13,8 +13,6 @@ type
 
   Row = array[0..4] of Cell;
 
-  CellPtrPtr = ^ CellPointer;
-
   RowOfPntrs = array[0..4] of CellPointer;
 
 var
@@ -83,7 +81,6 @@ var
   i, start, count: Integer;
   CurrentCells: Row;
 begin
-  ClrScr;
   for i := 0 to 4 do
   begin
     start := 5 * i;
@@ -126,23 +123,22 @@ var
   UpperCell: CellPointer;
   LowerCell: CellPointer;
 begin
-  try
+  if (CursorPosition >= 5) then
+  begin
     UpperCell := @MainField[CursorPosition - 5];
     if (UpperCell^.Check = Checked) then
       UpperCell^.Check := Unchecked
     else
       UpperCell^.Check := Checked;
-  except
   end;
-  try
+  if (CursorPosition < 20) then
+  begin
     LowerCell := @MainField[CursorPosition + 5];
     if (LowerCell^.Check = Checked) then
       LowerCell^.Check := Unchecked
     else
       LowerCell^.Check := Checked;
-  except
   end;
-
 end;
 
 procedure CheckHorizontalNbrs();
@@ -198,10 +194,19 @@ begin
   end;
 end;
 
-procedure ClearCmd();
+function IsVictory(): Boolean;
+var
+  C: Cell;
+  i: Integer;
 begin
-  Write(Chr(27), '[', 5, 'A');
-  Write(Chr(27), '[', 5 * 3, 'D');
+  i := 0;
+  for C in MainField do
+    if (C.Check = Checked) then
+      i := i + 1;
+  if (i = 25) then
+    Result := true
+  else
+    Result := false;
 end;
 
 
@@ -213,8 +218,13 @@ begin
   begin
     Input := ReadKey;
     InputHandler(Input);
-    ClearCmd();
+    ClrScr;
     DisplayField(MainField);
+    if (IsVictory()) then
+    begin
+      ClrScr;
+      WriteLn('You won!');
+    end;
     if Input = #27 then
       Break;
   end;
