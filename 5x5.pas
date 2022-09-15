@@ -16,11 +16,15 @@ type
 
   RowOfPntrs = array[0..4] of CellPointer;
 
+const
+  CHANCE = 30;
+
 var
   Input: Char;
   CursorPosition: Integer;
   MainField: Field;
   ASCII: TStringList;
+  NumberOfMoves: Integer;
 
 function SubArray(Ary: Field; Start, Count: Integer): Row;
 var
@@ -44,10 +48,15 @@ end;
 procedure CreateField(var MainField: Field);
 var
   i: Integer;
+  rand: Integer;
 begin
   for i := 0 to 24 do
   begin
-    MainField[i].Check := Unchecked;
+    rand := random(100);
+    if rand > CHANCE then
+      MainField[i].Check := Unchecked
+    else
+      MainField[i].Check := Checked;
     MainField[i].CellIndex := i;
   end;
 end;
@@ -183,6 +192,7 @@ begin
     CurrentCell^.Check := Checked;
   CheckVerticalNbrs();
   CheckHorizontalNbrs();
+  NumberOfMoves := NumberOfMoves + 1;
 end;
 
 procedure Win();
@@ -195,6 +205,7 @@ end;
 
 procedure CreateGame();
 begin
+  randomize();
   ASCII := TStringList.Create;
   ASCII.LoadFromFile('5x5.txt');
   CursorPosition := 0;
@@ -202,6 +213,7 @@ begin
   WriteLn(ASCII.Text);
   CreateField(MainField);
   DisplayField(MainField);
+  NumberOfMoves := 0;
 end;
 
 procedure InputHandler(Input: Char);
@@ -251,6 +263,7 @@ begin
       ClrScr;
       WriteLn(ASCII.Text);
       DisplayField(MainField);
+      WriteLn('Moves: ', NumberOfMoves);
     end;
     if Input = #27 then
       Break;
